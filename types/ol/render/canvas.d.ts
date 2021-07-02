@@ -1,11 +1,12 @@
 import { ColorLike } from '../colorlike';
+import BaseObject from '../Object';
+import { Size } from '../size';
 import Fill from '../style/Fill';
 import Stroke from '../style/Stroke';
 import { Transform } from '../transform';
-import LabelCache from './canvas/LabelCache';
+import { ReplayImageOrLabelArgs } from './canvas/Executor';
 
-export type DeclutterGroup = any[];
-export type DeclutterGroups = DeclutterGroup[];
+export type DeclutterImageWithText = { [key: number]: ReplayImageOrLabelArgs };
 export interface FillState {
     fillStyle: ColorLike;
 }
@@ -28,6 +29,19 @@ export interface FillStrokeState {
     lineWidth?: number;
     miterLimit?: number;
 }
+export interface Label {
+    width: number;
+    height: number;
+    contextInstructions: (string | number)[];
+}
+export interface SerializableInstructions {
+    instructions: any[];
+    hitDetectionInstructions: any[];
+    coordinates: number[];
+    textStates?: { [key: string]: TextState };
+    fillStates?: { [key: string]: FillState };
+    strokeStates?: { [key: string]: StrokeState };
+}
 export interface StrokeState {
     lineCap: CanvasLineCap;
     lineDash: number[];
@@ -46,24 +60,52 @@ export interface TextState {
     overflow?: boolean;
     backgroundFill?: Fill;
     backgroundStroke?: Stroke;
-    scale?: number;
+    scale?: Size;
     padding?: number[];
 }
-export const labelCache: LabelCache;
-export function drawImage(
+export const checkedFonts: BaseObject;
+export const defaultFillStyle: ColorLike;
+export const defaultFont: string;
+export const defaultLineCap: CanvasLineCap;
+export const defaultLineDash: number[];
+export const defaultLineDashOffset: number;
+export const defaultLineJoin: CanvasLineJoin;
+export const defaultLineWidth: number;
+export const defaultMiterLimit: number;
+export const defaultPadding: number[];
+export const defaultStrokeStyle: ColorLike;
+export const defaultTextAlign: string;
+export const defaultTextBaseline: string;
+/**
+ * The label cache for text rendering. To change the default cache size of 2048
+ * entries, use {@link module:ol/structs/LRUCache#setSize}.
+ * Deprecated - there is no label cache any more.
+ */
+export const labelCache: any;
+/**
+ * Clears the label cache when a font becomes available.
+ */
+export const registerFont: (fontSpec: string) => void;
+export const textHeights: { [key: string]: number };
+export function createTransformString(transform: Transform): string;
+export function drawImageOrLabel(
     context: CanvasRenderingContext2D,
     transform: Transform | null,
     opacity: number,
-    image: HTMLImageElement | HTMLCanvasElement | HTMLVideoElement,
+    labelOrImage: Label | HTMLCanvasElement | HTMLImageElement | HTMLVideoElement,
     originX: number,
     originY: number,
     w: number,
     h: number,
     x: number,
     y: number,
-    scale: number,
+    scale: Size,
 ): void;
+/**
+ * Measure text width using a cache.
+ */
 export function measureAndCacheTextWidth(font: string, text: string, cache: { [key: string]: number }): number;
+export function measureTextHeight(font: string): Size;
 export function measureTextWidth(font: string, text: string): number;
 export function measureTextWidths(font: string, lines: string[], widths: number[]): number;
 export function rotateAtOffset(

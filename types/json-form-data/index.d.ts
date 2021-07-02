@@ -1,13 +1,19 @@
-// Type definitions for json-form-data 1.5
+// Type definitions for json-form-data 1.7
 // Project: https://github.com/hyperatom/json-form-data
 // Definitions by: Aaron Ross <https://github.com/superhawk610>
+//                 Kamil Socha <https://github.com/ksocha>
+//                 Felix Borzik <https://github.com/Borzik>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
 interface ValidJSON {
-    [key: string]: ValidJSON | ValidJSONValue | ValidJSONValue[] | FileList;
+    [key: string]: ValidJSON | ValidJSON[] | ValidJSONValue | ValidJSONValue[] | FileList;
 }
 
 type ValidJSONValue = string | number | boolean | File | Blob | Date | null | undefined;
+
+interface InitialFormData {
+    append: FormData['append'];
+}
 
 /**
  * Formatting options for modifying the final generated FormData object.
@@ -15,6 +21,7 @@ type ValidJSONValue = string | number | boolean | File | Blob | Date | null | un
  * ## Defaults
  *
  *     const defaultOpts = {
+ *       initialFormData: new FormData(),
  *       showLeafArrayIndexes: true,
  *       includeNullValues: false,
  *       mapping: value => {
@@ -27,6 +34,11 @@ type ValidJSONValue = string | number | boolean | File | Blob | Date | null | un
  *     }
  */
 interface FormatOptions {
+    /**
+     * Existing form data which values will be appended to  (default: `new FormData()`).
+     * This can be used to support environments that do not have a global FormData object.
+     */
+    initialFormData?: InitialFormData;
     /**
      * Include index values in arrays (default: `true`).
      *

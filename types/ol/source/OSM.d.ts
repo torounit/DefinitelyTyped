@@ -9,20 +9,26 @@ import XYZ from './XYZ';
 export interface Options {
     attributions?: AttributionLike;
     cacheSize?: number;
-    crossOrigin?: string;
+    crossOrigin?: null | string;
+    imageSmoothing?: boolean;
     maxZoom?: number;
     opaque?: boolean;
     reprojectionErrorThreshold?: number;
     tileLoadFunction?: LoadFunction;
+    transition?: number;
     url?: string;
     wrapX?: boolean;
 }
+/**
+ * The attribution containing a link to the OpenStreetMap Copyright and License
+ * page.
+ */
 export const ATTRIBUTION: string;
 export default class OSM extends XYZ {
     constructor(opt_options?: Options);
-    on(type: string | string[], listener: (p0: any) => void): EventsKey | EventsKey[];
-    once(type: string | string[], listener: (p0: any) => void): EventsKey | EventsKey[];
-    un(type: string | string[], listener: (p0: any) => void): void;
+    on(type: string | string[], listener: (p0: any) => any): EventsKey | EventsKey[];
+    once(type: string | string[], listener: (p0: any) => any): EventsKey | EventsKey[];
+    un(type: string | string[], listener: (p0: any) => any): void;
     on(type: 'change', listener: (evt: BaseEvent) => void): EventsKey;
     once(type: 'change', listener: (evt: BaseEvent) => void): EventsKey;
     un(type: 'change', listener: (evt: BaseEvent) => void): void;

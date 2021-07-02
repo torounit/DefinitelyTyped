@@ -13,7 +13,7 @@
 // to the interfaces that extend them (like Identifier or
 // ArrowFunctionExpression), but you can't extend a type union or enforce
 // common fields on them. So we've split the high level interfaces into two
-// types, a base type which passes down inhereted fields, and a type union of
+// types, a base type which passes down inherited fields, and a type union of
 // all types which extend the base type. Only the type union is exported, and
 // the union is how other types refer to the collection of inheriting types.
 //
@@ -37,7 +37,7 @@ interface BaseNode extends BaseNodeWithoutComments {
 
 export type Node =
     Identifier | Literal | Program | Function | SwitchCase | CatchClause |
-    VariableDeclarator | Statement | Expression | Property |
+    VariableDeclarator | Statement | Expression | PrivateIdentifier | Property | PropertyDefinition |
     AssignmentProperty | Super | TemplateElement | SpreadElement | Pattern |
     ClassBody | Class | MethodDefinition | ModuleDeclaration | ModuleSpecifier;
 
@@ -226,9 +226,16 @@ type Expression =
     LogicalExpression | MemberExpression | ConditionalExpression |
     CallExpression | NewExpression | SequenceExpression | TemplateLiteral |
     TaggedTemplateExpression | ClassExpression | MetaProperty | Identifier |
-    AwaitExpression;
+    AwaitExpression | ImportExpression | ChainExpression;
 
 export interface BaseExpression extends BaseNode { }
+
+type ChainElement = SimpleCallExpression | MemberExpression;
+
+export interface ChainExpression extends BaseExpression {
+  type: "ChainExpression";
+  expression: ChainElement;
+}
 
 export interface ThisExpression extends BaseExpression {
   type: "ThisExpression";
@@ -236,22 +243,35 @@ export interface ThisExpression extends BaseExpression {
 
 export interface ArrayExpression extends BaseExpression {
   type: "ArrayExpression";
-  elements: Array<Expression | SpreadElement>;
+  elements: Array<Expression | SpreadElement | null>;
 }
 
 export interface ObjectExpression extends BaseExpression {
   type: "ObjectExpression";
-  properties: Array<Property>;
+  properties: Array<Property | SpreadElement>;
+}
+
+export interface PrivateIdentifier extends BaseNode {
+    type: "PrivateIdentifier";
+    name: string;
 }
 
 export interface Property extends BaseNode {
   type: "Property";
-  key: Expression;
+  key: Expression | PrivateIdentifier;
   value: Expression | Pattern; // Could be an AssignmentProperty
   kind: "init" | "get" | "set";
   method: boolean;
   shorthand: boolean;
   computed: boolean;
+}
+
+export interface PropertyDefinition extends BaseNode {
+    type: "PropertyDefinition";
+    key: Expression | PrivateIdentifier;
+    value?: Expression | null;
+    computed: boolean;
+    static: boolean;
 }
 
 export interface FunctionExpression extends BaseFunction, BaseExpression {
@@ -315,6 +335,7 @@ export type CallExpression = SimpleCallExpression | NewExpression;
 
 export interface SimpleCallExpression extends BaseCallExpression {
   type: "CallExpression";
+  optional: boolean;
 }
 
 export interface NewExpression extends BaseCallExpression {
@@ -324,8 +345,9 @@ export interface NewExpression extends BaseCallExpression {
 export interface MemberExpression extends BaseExpression, BasePattern {
   type: "MemberExpression";
   object: Expression | Super;
-  property: Expression;
+  property: Expression | PrivateIdentifier;
   computed: boolean;
+  optional: boolean;
 }
 
 export type Pattern =
@@ -351,7 +373,7 @@ export interface Identifier extends BaseNode, BaseExpression, BasePattern {
   name: string;
 }
 
-export type Literal = SimpleLiteral | RegExpLiteral;
+export type Literal = SimpleLiteral | RegExpLiteral | BigIntLiteral;
 
 export interface SimpleLiteral extends BaseNode, BaseExpression {
   type: "Literal";
@@ -369,6 +391,13 @@ export interface RegExpLiteral extends BaseNode, BaseExpression {
   raw?: string;
 }
 
+export interface BigIntLiteral extends BaseNode, BaseExpression {
+  type: "Literal";
+  value?: bigint | null;
+  bigint: string;
+  raw?: string;
+}
+
 export type UnaryOperator =
     "-" | "+" | "!" | "~" | "typeof" | "void" | "delete";
 
@@ -377,7 +406,7 @@ export type BinaryOperator =
     ">>" | ">>>" | "+" | "-" | "*" | "/" | "%" | "**" | "|" | "^" | "&" | "in" |
     "instanceof";
 
-export type LogicalOperator = "||" | "&&";
+export type LogicalOperator = "||" | "&&" | "??";
 
 export type AssignmentOperator =
     "=" | "+=" | "-=" | "*=" | "/=" | "%=" | "**=" | "<<=" | ">>=" | ">>>=" |
@@ -387,6 +416,7 @@ export type UpdateOperator = "++" | "--";
 
 export interface ForOfStatement extends BaseForXStatement {
   type: "ForOfStatement";
+  await: boolean;
 }
 
 export interface Super extends BaseNode {
@@ -426,7 +456,8 @@ export interface TemplateElement extends BaseNode {
   type: "TemplateElement";
   tail: boolean;
   value: {
-    cooked: string;
+    /** It is null when the template literal is tagged and the text has an invalid escape (e.g. - tag`\unicode and \u{55}`) */
+    cooked?: string | null;
     raw: string;
   };
 }
@@ -439,12 +470,12 @@ export interface AssignmentProperty extends Property {
 
 export interface ObjectPattern extends BasePattern {
   type: "ObjectPattern";
-  properties: Array<AssignmentProperty>;
+  properties: Array<AssignmentProperty | RestElement>;
 }
 
 export interface ArrayPattern extends BasePattern {
   type: "ArrayPattern";
-  elements: Array<Pattern>;
+  elements: Array<Pattern | null>;
 }
 
 export interface RestElement extends BasePattern {
@@ -466,12 +497,12 @@ interface BaseClass extends BaseNode {
 
 export interface ClassBody extends BaseNode {
   type: "ClassBody";
-  body: Array<MethodDefinition>;
+  body: Array<MethodDefinition | PropertyDefinition>;
 }
 
 export interface MethodDefinition extends BaseNode {
   type: "MethodDefinition";
-  key: Expression;
+  key: Expression | PrivateIdentifier;
   value: FunctionExpression;
   kind: "constructor" | "method" | "get" | "set";
   computed: boolean;
@@ -518,6 +549,11 @@ export interface ImportSpecifier extends BaseModuleSpecifier {
   imported: Identifier;
 }
 
+export interface ImportExpression extends BaseExpression {
+  type: "ImportExpression";
+  source: Expression;
+}
+
 export interface ImportDefaultSpecifier extends BaseModuleSpecifier {
   type: "ImportDefaultSpecifier";
 }
@@ -545,6 +581,7 @@ export interface ExportDefaultDeclaration extends BaseModuleDeclaration {
 
 export interface ExportAllDeclaration extends BaseModuleDeclaration {
   type: "ExportAllDeclaration";
+  exported: Identifier | null;
   source: Literal;
 }
 

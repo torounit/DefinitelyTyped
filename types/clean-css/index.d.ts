@@ -8,6 +8,8 @@
 import { RequestOptions as HttpsRequestOptions } from "https";
 import { RequestOptions as HttpRequestOptions } from "http";
 
+import { RawSourceMap, SourceMapGenerator } from "source-map";
+
 /**
  * Shared options passed when initializing a new instance of CleanCSS that returns either a promise or output
  */
@@ -92,7 +94,7 @@ declare namespace CleanCSS {
         /**
          * Output source map if requested with `sourceMap` option
          */
-        sourceMap: string;
+        sourceMap: SourceMapGenerator;
 
         /**
          * A list of errors raised
@@ -389,6 +391,11 @@ declare namespace CleanCSS {
          * Controls maximum line length; defaults to `false`
          */
         wrapAt?: false | number;
+
+        /**
+         * Controls removing trailing semicolons in rule; defaults to `false` - means remove
+         */
+        semicolonAfterLastProperty?: boolean;
     }
 
     /**
@@ -508,11 +515,6 @@ declare namespace CleanCSS {
             tidySelectors?: boolean;
 
             /**
-             * Controls removing trailing semicolons in rule; defaults to `false` - means remove
-             */
-            semicolonAfterLastProperty?: boolean;
-
-            /**
              * Defines a callback for fine-grained property optimization; defaults to no-op
              */
             transform?: (propertyName: string, propertyValue: string, selector?: string) => string;
@@ -612,7 +614,7 @@ declare namespace CleanCSS {
             /**
              * The source map of the file, if needed
              */
-            sourceMap?: string;
+            sourceMap?: RawSourceMap | string;
         };
     }
 
@@ -636,13 +638,13 @@ declare namespace CleanCSS {
      */
     interface MinifierOutput {
         minify(sources: Sources, callback?: (error: any, output: Output) => void): Output;
-        minify(sources: Sources, sourceMap: string, callback?: (error: any, output: Output) => void): Output;
+        minify(sources: Sources, sourceMap: RawSourceMap | string, callback?: (error: any, output: Output) => void): Output;
     }
     /**
      * Interface exposed when a new CleanCSS object is created with returnPromise set to true
      */
     interface MinifierPromise {
-        minify(sources: Sources, sourceMap?: string): Promise<Output>;
+        minify(sources: Sources, sourceMap?: RawSourceMap | string): Promise<Output>;
     }
 
     /**

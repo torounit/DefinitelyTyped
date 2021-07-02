@@ -1,4 +1,4 @@
-// Type definitions for webpack (module API) 1.15
+// Type definitions for webpack (module API) 1.16
 // Project: https://github.com/webpack/webpack
 // Definitions by: use-strict <https://github.com/use-strict>
 //                 rhonsby <https://github.com/rhonsby>
@@ -59,7 +59,7 @@ declare namespace __WebpackModuleApi {
          * Multiple requires to the same module result in only one module execution and only one export. Therefore a cache in the runtime exists. Removing values from this cache cause new module execution and a new export. This is only needed in rare cases (for compatibility!).
          */
         cache: {
-            [id: string]: NodeModule;
+            [id: string]: NodeModule | undefined;
         }
     }
 
@@ -68,7 +68,7 @@ declare namespace __WebpackModuleApi {
         id: string;
         filename: string;
         loaded: boolean;
-        parent: NodeModule | null;
+        parent: NodeModule | null | undefined;
         children: NodeModule[];
         hot?: Hot;
     }
@@ -126,14 +126,16 @@ declare namespace __WebpackModuleApi {
          * Accept code updates for the specified dependencies. The callback is called when dependencies were replaced.
          * @param dependencies
          * @param callback
+         * @param errorHandler
          */
-        accept(dependencies: string[], callback?: (updatedDependencies: ModuleId[]) => void): void;
+        accept(dependencies: string[], callback?: (updatedDependencies: ModuleId[]) => void, errorHandler?: (err: Error) => void): void;
         /**
          * Accept code updates for the specified dependencies. The callback is called when dependencies were replaced.
          * @param dependency
          * @param callback
+         * @param errorHandler
          */
-        accept(dependency: string, callback?: () => void): void;
+        accept(dependency: string, callback?: () => void, errorHandler?: (err: Error) => void): void;
         /**
          * Accept code updates for this module without notification of parents.
          * This should only be used if the module doesn’t export anything.
@@ -325,9 +327,31 @@ declare var __webpack_hash__: any;
 declare var __non_webpack_require__: any;
 
 /**
+ * Adds nonce to all scripts that webpack loads.
+ *
+ * To activate the feature a __webpack_nonce__ variable needs to be set in your entry script.
+ */
+declare var __webpack_nonce__: string;
+
+/**
  * Equals the config option debug
  */
 declare var DEBUG: boolean;
+
+interface ImportMeta {
+    /**
+     * `import.meta.webpackHot` is an alias for` module.hot` which is also available in strict ESM
+     */
+    webpackHot?: __WebpackModuleApi.Hot;
+    /**
+     * `import.meta.webpack` is the webpack major version as number
+     */
+    webpack: number;
+    /**
+     * `import.meta.url` is the `file:` url of the current file (similar to `__filename` but as file url)
+     */
+    url: string;
+}
 
 interface NodeModule extends NodeJS.Module {}
 
